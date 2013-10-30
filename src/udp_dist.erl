@@ -16,6 +16,8 @@
             R ->
                 R
         end).
+-define(NODENAME, configuration:get_env(nodename, "eliot")).
+-define(INTERFACE, configuration:get_env(interface, "wlan0")).
 
 % Public API
 
@@ -222,7 +224,7 @@ do_setup(Kernel, all, Type, MyNode, LongOrShortNames, SetupTime) ->
                              },
             dist_util:handshake_we_started(HSData),
             ?trace("DEBUG: Handshake done~n", []);
-        Other ->
+        _Other ->
             ?trace("Inner: ~p~n", [Other]),
             ?shutdown(all)
     end;
@@ -279,7 +281,7 @@ do_setup(Kernel, Node, Type, MyNode, LongOrShortNames,SetupTime) ->
                                      },
                     dist_util:handshake_we_started(HSData),
                     ?trace("DEBUG: Handshake done~n", []);
-                Other ->
+                _Other ->
                     ?trace("Inner: ~p~n", [Other]),
                     ?shutdown(Node)
             end;
@@ -341,6 +343,7 @@ getstat(Socket) ->
     udp:get_status_counters(Socket).
 
 get_bcast_addr() ->
+    Interface = ?INTERFACE,
     case inet:getifaddrs() of
         {ok, IfList} when length(IfList) == 2 ->
             [{_Real, IfOpts}] = lists:filter(fun({Name, _IfOpts}) when Name == "lo" -> false;
@@ -348,12 +351,13 @@ get_bcast_addr() ->
             {broadaddr, Address} = lists:keyfind(broadaddr, 1, IfOpts),
             Address;
         {ok, IfList} ->
-            {?INTERFACE, IfOpts} = lists:keyfind(?INTERFACE, 1, IfList),
+            {Interface, IfOpts} = lists:keyfind(?INTERFACE, 1, IfList),
             {broadaddr, Address} = lists:keyfind(broadaddr, 1, IfOpts),
             Address
     end.
 
 get_host_ip() ->
+    Interface = ?INTERFACE,
     case inet:getifaddrs() of
         {ok, IfList} when length(IfList) == 2 ->
             [{_Real, IfOpts}] = lists:filter(fun({Name, _IfOpts}) when Name == "lo" -> false;
@@ -361,7 +365,7 @@ get_host_ip() ->
             {addr, Address} = lists:keyfind(addr, 1, IfOpts),
             Address;
         {ok, IfList} ->
-            {?INTERFACE, IfOpts} = lists:keyfind(?INTERFACE, 1, IfList),
+            {Interface, IfOpts} = lists:keyfind(?INTERFACE, 1, IfList),
             Addresses = proplists:lookup_all(addr, IfOpts),
             Ip4Addresses = lists:filter(fun({addr, Addr}) when tuple_size(Addr) == 4 -> true;
                                                            ({addr, _Addr}) -> false end, Addresses),

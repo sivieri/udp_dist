@@ -15,6 +15,8 @@
 			    _ ->
 				ok
 			end).
+-define(NODENAME, configuration:get_env(nodename, "eliot")).
+-define(INTERFACE, configuration:get_env(interface, "wlan0")).
 
 listen(Name) ->
     ?check_server(),
@@ -202,6 +204,7 @@ start() ->
     erlang:set_cookie(node(), 'abc').
 
 get_host_ip() ->
+    Interface = ?INTERFACE,
     case inet:getifaddrs() of
         {ok, IfList} when length(IfList) == 2 ->
             [{_Real, IfOpts}] = lists:filter(fun({Name, _IfOpts}) when Name == "lo" -> false;
@@ -209,7 +212,7 @@ get_host_ip() ->
             {addr, Address} = lists:keyfind(addr, 1, IfOpts),
             inet_parse:ntoa(Address);
         {ok, IfList} ->
-            {?INTERFACE, IfOpts} = lists:keyfind(?INTERFACE, 1, IfList),
+            {Interface, IfOpts} = lists:keyfind(Interface, 1, IfList),
             Addresses = proplists:lookup_all(addr, IfOpts),
             Ip4Addresses = lists:filter(fun({addr, Addr}) when tuple_size(Addr) == 4 -> true;
                                                            ({addr, _Addr}) -> false end, Addresses),
